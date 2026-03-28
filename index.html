@@ -1,0 +1,1707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>VoiceReach — AI Sales Calling Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: #2a2a3e;
+    --accent: #7c6af7;
+    --accent2: #f76a8a;
+    --accent3: #6af7c8;
+    --text: #e8e8f0;
+    --text2: #888899;
+    --text3: #555566;
+    --success: #4ade80;
+    --warning: #facc15;
+    --danger: #f87171;
+    --font-head: 'Syne', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+    --font-body: 'DM Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(124,106,247,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,106,247,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .glow-orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .glow-orb-1 { width: 500px; height: 500px; background: rgba(124,106,247,0.12); top: -200px; right: -100px; }
+  .glow-orb-2 { width: 400px; height: 400px; background: rgba(247,106,138,0.08); bottom: -100px; left: -100px; }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+  }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 0 40px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo-icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+  .logo-text {
+    font-family: var(--font-head);
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+  .logo-text span { color: var(--accent); }
+  .header-badge {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent3);
+    border: 1px solid rgba(106,247,200,0.3);
+    background: rgba(106,247,200,0.05);
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+  /* Steps indicator */
+  .steps {
+    display: flex;
+    gap: 0;
+    margin-bottom: 36px;
+  }
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px 10px 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text3);
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  .step.active { color: var(--text); }
+  .step.done { color: var(--accent3); }
+  .step-num {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    transition: all 0.2s;
+  }
+  .step.active .step-num {
+    border-color: var(--accent);
+    background: rgba(124,106,247,0.15);
+    color: var(--accent);
+  }
+  .step.done .step-num {
+    border-color: var(--accent3);
+    background: rgba(106,247,200,0.1);
+    color: var(--accent3);
+  }
+  .step-divider {
+    width: 40px;
+    height: 1px;
+    background: var(--border);
+    align-self: center;
+    margin: 0 4px;
+  }
+
+  /* Panels */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 20px;
+    display: none;
+  }
+  .panel.active { display: block; animation: fadeUp 0.3s ease; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .panel-title {
+    font-family: var(--font-head);
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    letter-spacing: -0.3px;
+  }
+  .panel-sub {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+
+  /* Form fields */
+  .field-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .field-group.single { grid-template-columns: 1fr; }
+  .field-group.triple { grid-template-columns: 1fr 1fr 1fr; }
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 8px;
+  }
+
+  input, select, textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 14px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(124,106,247,0.12);
+  }
+  input::placeholder, textarea::placeholder { color: var(--text3); }
+  textarea { resize: vertical; min-height: 90px; line-height: 1.5; }
+  select option { background: var(--surface2); }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 22px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: var(--font-body);
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #5b4fd4);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(124,106,247,0.35);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(124,106,247,0.45); }
+  .btn-secondary {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger {
+    background: rgba(248,113,113,0.12);
+    border: 1px solid rgba(248,113,113,0.3);
+    color: var(--danger);
+  }
+  .btn-sm { padding: 7px 14px; font-size: 12px; }
+  .btn-green {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(34,197,94,0.3);
+  }
+  .btn-green:hover { transform: translateY(-1px); }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; }
+
+  /* Upload zone */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    margin-bottom: 16px;
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(124,106,247,0.05);
+  }
+  .upload-icon { font-size: 36px; margin-bottom: 12px; }
+  .upload-text { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .upload-hint { font-size: 12px; color: var(--text2); }
+  .upload-zone input[type=file] { display: none; }
+
+  /* Contacts table */
+  .contacts-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .contacts-count {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text2);
+  }
+  .contacts-count span { color: var(--accent); font-weight: 500; }
+
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 16px;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    background: var(--surface2);
+    padding: 10px 14px;
+    text-align: left;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(42,42,62,0.5);
+    color: var(--text);
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(124,106,247,0.04); }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+  }
+  .status-pending { background: rgba(88,88,110,0.3); color: var(--text2); }
+  .status-calling { background: rgba(124,106,247,0.2); color: var(--accent); }
+  .status-answered { background: rgba(74,222,128,0.15); color: var(--success); }
+  .status-scheduled { background: rgba(106,247,200,0.15); color: var(--accent3); }
+  .status-voicemail { background: rgba(250,204,21,0.15); color: var(--warning); }
+  .status-failed { background: rgba(248,113,113,0.15); color: var(--danger); }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* Manual add */
+  .add-manual {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    padding: 16px;
+    background: var(--surface2);
+    border-radius: 10px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+  }
+  .add-manual .field { flex: 1; }
+  .add-manual label { margin-bottom: 6px; }
+  .add-manual .btn { white-space: nowrap; }
+
+  /* Script editor */
+  .script-preview {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text2);
+    font-family: var(--font-body);
+    margin-top: 12px;
+    max-height: 160px;
+    overflow-y: auto;
+  }
+  .script-preview strong { color: var(--accent); }
+
+  /* Campaign config */
+  .config-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .config-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .config-card-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 12px;
+  }
+
+  /* Live dashboard */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+  }
+  .stat-num {
+    font-family: var(--font-head);
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 4px;
+  }
+  .stat-label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-card.accent .stat-num { color: var(--accent); }
+  .stat-card.green .stat-num { color: var(--success); }
+  .stat-card.teal .stat-num { color: var(--accent3); }
+  .stat-card.yellow .stat-num { color: var(--warning); }
+  .stat-card.red .stat-num { color: var(--danger); }
+
+  /* Progress bar */
+  .progress-wrap {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .progress-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .progress-label {
+    font-family: var(--font-head);
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .progress-pct {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--accent);
+  }
+  .progress-bar-bg {
+    height: 8px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 99px;
+    transition: width 0.5s ease;
+  }
+
+  /* Live log */
+  .live-log {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0;
+    overflow: hidden;
+  }
+  .live-log-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .live-indicator {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--success);
+  }
+  .live-dot {
+    width: 7px; height: 7px;
+    background: var(--success);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+  .log-entries {
+    max-height: 280px;
+    overflow-y: auto;
+    padding: 10px 0;
+  }
+  .log-entry {
+    padding: 8px 18px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(42,42,62,0.4);
+    animation: slideIn 0.3s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  .log-time { font-family: var(--font-mono); font-size: 11px; color: var(--text3); white-space: nowrap; margin-top: 1px; }
+  .log-msg { color: var(--text2); flex: 1; line-height: 1.4; }
+  .log-msg strong { color: var(--text); }
+
+  /* Call detail modal */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(6px);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    width: 560px;
+    max-width: 95vw;
+    transform: scale(0.95);
+    transition: transform 0.2s;
+    position: relative;
+  }
+  .modal-overlay.open .modal { transform: scale(1); }
+  .modal-title { font-family: var(--font-head); font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+  .modal-close {
+    position: absolute; top: 20px; right: 20px;
+    background: var(--surface2); border: 1px solid var(--border);
+    width: 30px; height: 30px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 16px; color: var(--text2);
+  }
+  .modal-close:hover { color: var(--text); border-color: var(--accent); }
+
+  /* Conversation display */
+  .conversation {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    max-height: 250px;
+    overflow-y: auto;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .conv-msg { margin-bottom: 10px; }
+  .conv-role {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 3px;
+  }
+  .conv-role.agent { color: var(--accent); }
+  .conv-role.contact { color: var(--accent3); }
+  .conv-text { color: var(--text2); }
+
+  /* Footer nav */
+  .panel-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+  }
+  .tag-free { background: rgba(106,247,200,0.1); color: var(--accent3); border: 1px solid rgba(106,247,200,0.2); }
+  .tag-info { background: rgba(124,106,247,0.1); color: var(--accent); border: 1px solid rgba(124,106,247,0.2); }
+
+  .info-box {
+    background: rgba(124,106,247,0.06);
+    border: 1px solid rgba(124,106,247,0.2);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+  .info-box a { color: var(--accent); text-decoration: none; }
+  .info-box a:hover { text-decoration: underline; }
+
+  .section-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 20px 0;
+    font-size: 12px;
+    color: var(--text3);
+  }
+  .section-divider::before, .section-divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+</style>
+</head>
+<body>
+
+<div class="glow-orb glow-orb-1"></div>
+<div class="glow-orb glow-orb-2"></div>
+
+<div class="app">
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">📞</div>
+      <div class="logo-text">Voice<span>Reach</span></div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <span class="tag tag-free">✦ Free Stack</span>
+      <span class="tag tag-info">Twilio + Groq + Whisper</span>
+    </div>
+  </header>
+
+  <!-- Steps -->
+  <div class="steps">
+    <div class="step active" id="step1-indicator" onclick="goStep(1)">
+      <div class="step-num">1</div> Setup APIs
+    </div>
+    <div class="step-divider"></div>
+    <div class="step" id="step2-indicator" onclick="goStep(2)">
+      <div class="step-num">2</div> Contacts
+    </div>
+    <div class="step-divider"></div>
+    <div class="step" id="step3-indicator" onclick="goStep(3)">
+      <div class="step-num">3</div> Script
+    </div>
+    <div class="step-divider"></div>
+    <div class="step" id="step4-indicator" onclick="goStep(4)">
+      <div class="step-num">4</div> Launch
+    </div>
+  </div>
+
+  <!-- STEP 1: API Setup -->
+  <div class="panel active" id="panel-1">
+    <div class="panel-title">🔑 API Configuration</div>
+    <div class="panel-sub">Enter your free API keys. All keys are stored locally in your browser — never sent anywhere except the respective APIs.</div>
+
+    <div class="info-box">
+      💡 <strong>Get your free keys:</strong><br>
+      • <strong>Twilio</strong>: <a href="https://www.twilio.com/try-twilio" target="_blank">twilio.com/try-twilio</a> — Free trial gives ~$15 credit (≈50 calls)<br>
+      • <strong>Groq</strong>: <a href="https://console.groq.com" target="_blank">console.groq.com</a> — Completely free tier, ultra-fast LLaMA<br>
+      • <strong>Twilio TTS</strong>: Built-in free, no extra key needed
+    </div>
+
+    <div class="field-group">
+      <div>
+        <label>Twilio Account SID</label>
+        <input id="twilioSid" type="password" placeholder="ACxxxxxxxxxxxxxxxx" />
+      </div>
+      <div>
+        <label>Twilio Auth Token</label>
+        <input id="twilioToken" type="password" placeholder="your_auth_token" />
+      </div>
+    </div>
+
+    <div class="field-group">
+      <div>
+        <label>Twilio Phone Number (From)</label>
+        <input id="twilioPhone" type="text" placeholder="+1234567890" />
+      </div>
+      <div>
+        <label>Your Webhook Server URL</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="webhookUrl" type="text" placeholder="https://your-ngrok-url.ngrok.io" style="flex:1;" oninput="resetConnectionStatus()" />
+          <button class="btn btn-secondary btn-sm" onclick="testConnection()" id="testConnBtn" style="white-space:nowrap;height:40px;">🔌 Test</button>
+        </div>
+        <div id="connStatus" style="margin-top:6px;font-size:12px;display:none;padding:6px 10px;border-radius:6px;"></div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <div>
+        <label>Groq API Key</label>
+        <input id="groqKey" type="password" placeholder="gsk_xxxxxxxxxxxx" />
+      </div>
+      <div>
+        <label>Agent Voice (Twilio TTS)</label>
+        <select id="agentVoice">
+          <option value="Polly.Joanna">Amazon Polly — Joanna (Female, US)</option>
+          <option value="Polly.Matthew">Amazon Polly — Matthew (Male, US)</option>
+          <option value="Polly.Amy">Amazon Polly — Amy (Female, UK)</option>
+          <option value="Polly.Brian">Amazon Polly — Brian (Male, UK)</option>
+          <option value="alice">Alice (Twilio Default)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="info-box" style="border-color:rgba(250,204,21,0.3);background:rgba(250,204,21,0.04);">
+      🛠️ <strong>Backend Required:</strong> You need a small Python/Node.js server to handle Twilio webhooks and call the Groq API. 
+      <a href="#" onclick="showBackendCode()">Click here to see the backend code</a> — deploy it free on <a href="https://railway.app" target="_blank">Railway.app</a> or <a href="https://render.com" target="_blank">Render.com</a>, then use ngrok for local testing.
+    </div>
+
+    <div class="panel-footer">
+      <div style="font-size:12px;color:var(--text3);">All data stored locally in browser</div>
+      <button class="btn btn-primary" onclick="saveConfig()">Save & Continue →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: Contacts -->
+  <div class="panel" id="panel-2">
+    <div class="panel-title">👥 Contacts List</div>
+    <div class="panel-sub">Upload an Excel/CSV file with phone numbers, or add contacts manually.</div>
+
+    <!-- Upload -->
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()" 
+         ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="handleDragLeave(event)">
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" onchange="handleFileUpload(event)" />
+      <div class="upload-icon">📊</div>
+      <div class="upload-text">Drop your Excel or CSV file here</div>
+      <div class="upload-hint">Supports .xlsx, .xls, .csv — needs columns: name, phone (or number)</div>
+    </div>
+
+    <div class="section-divider">OR ADD MANUALLY</div>
+
+    <!-- Manual add -->
+    <div class="add-manual">
+      <div class="field">
+        <label>Name</label>
+        <input id="manualName" type="text" placeholder="John Smith" />
+      </div>
+      <div class="field">
+        <label>Phone Number</label>
+        <input id="manualPhone" type="text" placeholder="+919876543210" />
+      </div>
+      <div class="field">
+        <label>Company (optional)</label>
+        <input id="manualCompany" type="text" placeholder="Acme Corp" />
+      </div>
+      <button class="btn btn-secondary" onclick="addManualContact()">+ Add</button>
+    </div>
+
+    <!-- Contacts Table -->
+    <div class="contacts-header">
+      <span class="contacts-count"><span id="contactCount">0</span> contacts loaded</span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-sm btn-secondary" onclick="downloadSampleExcel()">⬇ Sample Excel</button>
+        <button class="btn btn-sm btn-danger" onclick="clearContacts()">✕ Clear All</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table id="contactsTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Company</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="contactsBody">
+          <tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text3);">No contacts yet. Upload a file or add manually.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel-footer">
+      <button class="btn btn-secondary" onclick="goStep(1)">← Back</button>
+      <button class="btn btn-primary" onclick="goStep(3)">Continue to Script →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: Script & Config -->
+  <div class="panel" id="panel-3">
+    <div class="panel-title">🎙️ Sales Script & Campaign Settings</div>
+    <div class="panel-sub">Define your sales agent's intro, pitch, and conversation style. The AI will handle live Q&A automatically.</div>
+
+    <div class="field-group">
+      <div>
+        <label>Your Company Name</label>
+        <input id="companyName" type="text" placeholder="TechSolutions India" />
+      </div>
+      <div>
+        <label>Agent Name</label>
+        <input id="agentName" type="text" placeholder="Priya" />
+      </div>
+    </div>
+
+    <div class="field-group single">
+      <div>
+        <label>Product / Service (1-2 lines)</label>
+        <input id="productDesc" type="text" placeholder="AI-powered CRM software that helps businesses close 3x more deals" />
+      </div>
+    </div>
+
+    <div class="field-group single">
+      <div>
+        <label>Opening Introduction Script</label>
+        <textarea id="introScript" placeholder="Hello, am I speaking with {name}? Hi {name}, I'm Priya calling from TechSolutions India. I hope I'm not catching you at a bad time. I'm reaching out because we've been helping businesses like yours..."></textarea>
+      </div>
+    </div>
+
+    <div class="field-group single">
+      <div>
+        <label>Key Selling Points (one per line)</label>
+        <textarea id="sellingPoints" placeholder="Saves 10 hours per week on manual data entry&#10;Free 30-day trial, no credit card required&#10;Used by 500+ companies in India&#10;24/7 customer support included" style="min-height:80px;"></textarea>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <div>
+        <label>Call Goal</label>
+        <select id="callGoal">
+          <option value="schedule_demo">Schedule a Demo/Meeting</option>
+          <option value="callback">Arrange a Callback</option>
+          <option value="interest_check">Check Interest Level</option>
+          <option value="direct_close">Direct Close / Sign-Up</option>
+        </select>
+      </div>
+      <div>
+        <label>Max Call Duration (seconds)</label>
+        <input id="maxDuration" type="number" value="180" min="30" max="600" />
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <label>Script Preview (auto-generated)</label>
+    <div class="script-preview" id="scriptPreview">
+      Fill in the fields above to preview how your agent will introduce itself...
+    </div>
+
+    <div style="margin-top:12px;">
+      <button class="btn btn-secondary btn-sm" onclick="previewScript()">🔄 Refresh Preview</button>
+    </div>
+
+    <div class="panel-footer">
+      <button class="btn btn-secondary" onclick="goStep(2)">← Back</button>
+      <button class="btn btn-primary" onclick="goStep(4)">Review & Launch →</button>
+    </div>
+  </div>
+
+  <!-- STEP 4: Launch & Dashboard -->
+  <div class="panel" id="panel-4">
+    <div class="panel-title">🚀 Campaign Dashboard</div>
+    <div class="panel-sub">Review your campaign settings and launch. The agent will call each contact, introduce your company, pitch your product, and handle live Q&A.</div>
+
+    <!-- Summary -->
+    <div class="config-grid" style="margin-bottom:20px;">
+      <div class="config-card">
+        <div class="config-card-title">Campaign Summary</div>
+        <div style="font-size:13px;color:var(--text2);line-height:2;">
+          <div>📞 Contacts: <strong id="summaryContacts" style="color:var(--text);">0</strong></div>
+          <div>🏢 Company: <strong id="summaryCompany" style="color:var(--text);">—</strong></div>
+          <div>🤖 Agent: <strong id="summaryAgent" style="color:var(--text);">—</strong></div>
+          <div>🎯 Goal: <strong id="summaryGoal" style="color:var(--text);">—</strong></div>
+        </div>
+      </div>
+      <div class="config-card">
+        <div class="config-card-title">Calling Settings</div>
+        <div style="font-size:13px;color:var(--text2);line-height:2;">
+          <div>📟 From: <strong id="summaryPhone" style="color:var(--text);">—</strong></div>
+          <div>🧠 AI: <strong style="color:var(--text);">Groq LLaMA 3</strong></div>
+          <div>🔊 Voice: <strong id="summaryVoice" style="color:var(--text);">—</strong></div>
+          <div>⏱ Max Duration: <strong id="summaryDuration" style="color:var(--text);">—</strong>s</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card accent">
+        <div class="stat-num" id="statTotal">0</div>
+        <div class="stat-label">Total</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="statPending" style="color:var(--text2)">0</div>
+        <div class="stat-label">Pending</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-num" id="statAnswered">0</div>
+        <div class="stat-label">Answered</div>
+      </div>
+      <div class="stat-card teal">
+        <div class="stat-num" id="statScheduled">0</div>
+        <div class="stat-label">Scheduled</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-num" id="statFailed">0</div>
+        <div class="stat-label">Failed</div>
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-wrap" id="progressWrap" style="display:none;">
+      <div class="progress-top">
+        <div class="progress-label">Campaign in Progress</div>
+        <div class="progress-pct" id="progressPct">0%</div>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- Live Log -->
+    <div class="live-log" style="margin-bottom:20px;">
+      <div class="live-log-header">
+        <span>📋 Activity Log</span>
+        <div class="live-indicator" id="liveIndicator" style="display:none;">
+          <div class="live-dot"></div> LIVE
+        </div>
+      </div>
+      <div class="log-entries" id="logEntries">
+        <div style="padding:20px;text-align:center;color:var(--text3);font-size:13px;">Campaign not started yet</div>
+      </div>
+    </div>
+
+    <!-- Contact Status Table -->
+    <div class="table-wrap" style="margin-bottom:20px;">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Status</th>
+            <th>Duration</th>
+            <th>Outcome</th>
+            <th>Detail</th>
+          </tr>
+        </thead>
+        <tbody id="dashboardBody">
+          <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text3);">No calls yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel-footer">
+      <button class="btn btn-secondary" onclick="goStep(3)">← Back</button>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-danger" id="stopBtn" onclick="stopCampaign()" style="display:none;">⏹ Stop Campaign</button>
+        <button class="btn btn-green" id="launchBtn" onclick="launchCampaign()">🚀 Launch Campaign</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Backend Code Modal -->
+<div class="modal-overlay" id="backendModal">
+  <div class="modal" style="width:700px;max-height:85vh;overflow-y:auto;">
+    <div class="modal-title">🛠️ Backend Server Code</div>
+    <div class="modal-close" onclick="closeModal('backendModal')">✕</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6;">
+      Deploy this Python Flask server on <strong>Railway.app</strong> (free) or run locally with <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;">ngrok</code>. It handles Twilio webhooks and uses Groq for AI responses.
+    </div>
+    <pre style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;font-size:11px;font-family:var(--font-mono);color:var(--text2);overflow-x:auto;white-space:pre;line-height:1.6;" id="backendCodeContent"></pre>
+    <div style="margin-top:16px;display:flex;gap:10px;">
+      <button class="btn btn-primary" onclick="copyBackendCode()">📋 Copy Code</button>
+      <button class="btn btn-secondary" onclick="closeModal('backendModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Call Detail Modal -->
+<div class="modal-overlay" id="callModal">
+  <div class="modal">
+    <div class="modal-title" id="callModalTitle">Call Details</div>
+    <div class="modal-close" onclick="closeModal('callModal')">✕</div>
+    <div id="callModalContent"></div>
+    <div style="margin-top:16px;">
+      <button class="btn btn-secondary" onclick="closeModal('callModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+let contacts = [];
+let campaignRunning = false;
+let campaignInterval = null;
+let callIndex = 0;
+let callLogs = [];
+let currentStep = 1;
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function goStep(n) {
+  if (n > 1) saveConfig(false);
+  if (n === 4) updateDashboard();
+
+  document.querySelectorAll('.panel').forEach((p, i) => {
+    p.classList.toggle('active', i + 1 === n);
+  });
+
+  document.querySelectorAll('.step').forEach((s, i) => {
+    s.classList.remove('active', 'done');
+    if (i + 1 === n) s.classList.add('active');
+    else if (i + 1 < n) s.classList.add('done');
+  });
+
+  currentStep = n;
+  if (n === 3) previewScript();
+}
+
+// ============================================================
+// CONFIG
+// ============================================================
+async function testConnection() {
+  const url = document.getElementById('webhookUrl').value.trim().replace(/\/$/, '');
+  const btn = document.getElementById('testConnBtn');
+  const status = document.getElementById('connStatus');
+  
+  if (!url) {
+    showConnStatus('error', '❌ Please enter your ngrok URL first');
+    return;
+  }
+  if (!url.startsWith('https://')) {
+    showConnStatus('error', '❌ URL must start with https:// — copy from your ngrok terminal');
+    return;
+  }
+
+  btn.textContent = '⏳';
+  btn.disabled = true;
+  showConnStatus('info', '🔄 Testing connection...');
+
+  try {
+    const res = await fetch(url + '/health', {
+      method: 'GET',
+      headers: { 'ngrok-skip-browser-warning': 'true' },
+      signal: AbortSignal.timeout(8000)
+    });
+    if (res.ok) {
+      const data = await res.json();
+      showConnStatus('success', '✅ Server is reachable! ' + (data.message || 'Connected successfully'));
+    } else {
+      showConnStatus('error', '❌ Server returned error ' + res.status + ' — check server.py terminal');
+    }
+  } catch(e) {
+    if (e.name === 'TimeoutError' || e.name === 'AbortError') {
+      showConnStatus('error', '❌ Connection timed out — is ngrok running? Run: ngrok http 5000');
+    } else {
+      showConnStatus('error', '❌ Cannot reach server: ' + e.message + ' — make sure ngrok is running and URL is correct');
+    }
+  }
+  btn.textContent = '🔌 Test';
+  btn.disabled = false;
+}
+
+function showConnStatus(type, msg) {
+  const el = document.getElementById('connStatus');
+  el.style.display = 'block';
+  const styles = {
+    success: 'background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);color:#4ade80;',
+    error:   'background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);color:#f87171;',
+    info:    'background:rgba(124,106,247,0.1);border:1px solid rgba(124,106,247,0.2);color:#a78bfa;'
+  };
+  el.style.cssText += styles[type] || styles.info;
+  el.textContent = msg;
+}
+
+function resetConnectionStatus() {
+  const el = document.getElementById('connStatus');
+  el.style.display = 'none';
+}
+
+function saveConfig(showAlert = true) {
+  const config = {
+    twilioSid: document.getElementById('twilioSid').value,
+    twilioToken: document.getElementById('twilioToken').value,
+    twilioPhone: document.getElementById('twilioPhone').value,
+    webhookUrl: document.getElementById('webhookUrl').value,
+    groqKey: document.getElementById('groqKey').value,
+    agentVoice: document.getElementById('agentVoice').value,
+    companyName: document.getElementById('companyName').value,
+    agentName: document.getElementById('agentName').value,
+    productDesc: document.getElementById('productDesc').value,
+    introScript: document.getElementById('introScript').value,
+    sellingPoints: document.getElementById('sellingPoints').value,
+    callGoal: document.getElementById('callGoal').value,
+    maxDuration: document.getElementById('maxDuration').value,
+  };
+  localStorage.setItem('voicereach_config', JSON.stringify(config));
+  if (showAlert) goStep(2);
+}
+
+function loadConfig() {
+  const saved = localStorage.getItem('voicereach_config');
+  if (!saved) return;
+  const c = JSON.parse(saved);
+  Object.entries(c).forEach(([key, val]) => {
+    const el = document.getElementById(key);
+    if (el) el.value = val;
+  });
+}
+
+// ============================================================
+// CONTACTS
+// ============================================================
+function handleDragOver(e) { e.preventDefault(); document.getElementById('uploadZone').classList.add('drag-over'); }
+function handleDragLeave() { document.getElementById('uploadZone').classList.remove('drag-over'); }
+function handleDrop(e) {
+  e.preventDefault();
+  handleDragLeave();
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+}
+function handleFileUpload(e) { processFile(e.target.files[0]); }
+
+function processFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    if (ext === 'csv') parseCSV(e.target.result);
+    else parseExcel(e.target.result);
+  };
+  if (ext === 'csv') reader.readAsText(file);
+  else reader.readAsArrayBuffer(file);
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].toLowerCase().split(',').map(h => h.trim().replace(/"/g, ''));
+  const nameIdx = headers.findIndex(h => h.includes('name'));
+  const phoneIdx = headers.findIndex(h => h.includes('phone') || h.includes('number') || h.includes('mobile'));
+  const companyIdx = headers.findIndex(h => h.includes('company') || h.includes('org'));
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(',').map(c => c.trim().replace(/"/g, ''));
+    if (!cols[phoneIdx]) continue;
+    contacts.push({
+      name: cols[nameIdx] || 'Unknown',
+      phone: cols[phoneIdx],
+      company: cols[companyIdx] || '',
+      status: 'pending'
+    });
+  }
+  renderContacts();
+}
+
+function parseExcel(buffer) {
+  const wb = XLSX.read(buffer, { type: 'array' });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
+  if (data.length < 2) return;
+
+  const headers = data[0].map(h => String(h || '').toLowerCase().trim());
+  const nameIdx = headers.findIndex(h => h.includes('name'));
+  const phoneIdx = headers.findIndex(h => h.includes('phone') || h.includes('number') || h.includes('mobile'));
+  const companyIdx = headers.findIndex(h => h.includes('company') || h.includes('org'));
+
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    if (!row[phoneIdx]) continue;
+    contacts.push({
+      name: row[nameIdx] || 'Unknown',
+      phone: String(row[phoneIdx]),
+      company: row[companyIdx] || '',
+      status: 'pending'
+    });
+  }
+  renderContacts();
+}
+
+function addManualContact() {
+  const name = document.getElementById('manualName').value.trim();
+  const phone = document.getElementById('manualPhone').value.trim();
+  const company = document.getElementById('manualCompany').value.trim();
+  if (!phone) { alert('Phone number is required'); return; }
+  contacts.push({ name: name || 'Unknown', phone, company, status: 'pending' });
+  document.getElementById('manualName').value = '';
+  document.getElementById('manualPhone').value = '';
+  document.getElementById('manualCompany').value = '';
+  renderContacts();
+}
+
+function removeContact(idx) {
+  contacts.splice(idx, 1);
+  renderContacts();
+}
+
+function clearContacts() {
+  if (contacts.length && !confirm('Clear all contacts?')) return;
+  contacts = [];
+  renderContacts();
+}
+
+function renderContacts() {
+  const tbody = document.getElementById('contactsBody');
+  document.getElementById('contactCount').textContent = contacts.length;
+  if (!contacts.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text3);">No contacts yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = contacts.map((c, i) => `
+    <tr>
+      <td style="color:var(--text3);font-family:var(--font-mono);font-size:11px;">${i + 1}</td>
+      <td><strong>${c.name}</strong></td>
+      <td style="font-family:var(--font-mono);font-size:12px;">${c.phone}</td>
+      <td style="color:var(--text2);">${c.company || '—'}</td>
+      <td><span class="status-badge status-${c.status}"><span class="status-dot"></span>${c.status}</span></td>
+      <td><button class="btn btn-sm btn-danger" onclick="removeContact(${i})">✕</button></td>
+    </tr>
+  `).join('');
+}
+
+function downloadSampleExcel() {
+  const data = [
+    ['name', 'phone', 'company'],
+    ['Rahul Sharma', '+919876543210', 'ABC Pvt Ltd'],
+    ['Priya Patel', '+919123456789', 'XYZ Solutions'],
+    ['Amit Kumar', '+918765432109', 'Tech Startup'],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Contacts');
+  XLSX.writeFile(wb, 'sample_contacts.xlsx');
+}
+
+// ============================================================
+// SCRIPT
+// ============================================================
+function previewScript() {
+  const company = document.getElementById('companyName').value || 'Your Company';
+  const agent = document.getElementById('agentName').value || 'Alex';
+  const product = document.getElementById('productDesc').value || 'our product';
+  const points = document.getElementById('sellingPoints').value.split('\n').filter(Boolean);
+  const goal = document.getElementById('callGoal').value;
+  const intro = document.getElementById('introScript').value;
+
+  const goalMap = {
+    schedule_demo: 'I would love to schedule a quick 15-minute demo to show you exactly how it works. Would that work for you?',
+    callback: 'Would it be convenient if I called you back at a time that suits you better?',
+    interest_check: 'I\'d love to know — is this something that might be relevant for your business?',
+    direct_close: 'We have a special offer running right now. Would you like to get started today?'
+  };
+
+  const previewText = intro
+    ? intro.replace('{name}', '<strong>[Contact Name]</strong>').replace('{company}', company).replace('{agent}', agent)
+    : `Hello, am I speaking with <strong>[Contact Name]</strong>?<br><br>
+       Hi, I'm <strong>${agent}</strong> calling from <strong>${company}</strong>. Hope I'm not catching you at a bad time.<br><br>
+       I'm reaching out because we've been helping businesses with <em>${product}</em>.<br><br>
+       ${points.length ? 'Here\'s what makes us different:<br>' + points.map(p => `• ${p}`).join('<br>') + '<br><br>' : ''}
+       ${goalMap[goal] || ''}`;
+
+  document.getElementById('scriptPreview').innerHTML = previewText;
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function updateDashboard() {
+  document.getElementById('summaryContacts').textContent = contacts.length;
+  document.getElementById('summaryCompany').textContent = document.getElementById('companyName').value || '—';
+  document.getElementById('summaryAgent').textContent = document.getElementById('agentName').value || '—';
+  document.getElementById('summaryPhone').textContent = document.getElementById('twilioPhone').value || '—';
+  document.getElementById('summaryVoice').textContent = document.getElementById('agentVoice').value || '—';
+  document.getElementById('summaryDuration').textContent = document.getElementById('maxDuration').value || '180';
+
+  const goalMap = { schedule_demo: 'Schedule Demo', callback: 'Arrange Callback', interest_check: 'Check Interest', direct_close: 'Direct Close' };
+  document.getElementById('summaryGoal').textContent = goalMap[document.getElementById('callGoal').value] || '—';
+
+  updateStats();
+  renderDashboardTable();
+}
+
+function updateStats() {
+  const total = contacts.length;
+  const pending = contacts.filter(c => c.status === 'pending').length;
+  const answered = contacts.filter(c => c.status === 'answered').length;
+  const scheduled = contacts.filter(c => c.status === 'scheduled').length;
+  const failed = contacts.filter(c => c.status === 'failed').length;
+
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statPending').textContent = pending;
+  document.getElementById('statAnswered').textContent = answered;
+  document.getElementById('statScheduled').textContent = scheduled;
+  document.getElementById('statFailed').textContent = failed;
+}
+
+function renderDashboardTable() {
+  const tbody = document.getElementById('dashboardBody');
+  if (!contacts.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text3);">No contacts loaded</td></tr>';
+    return;
+  }
+  tbody.innerHTML = contacts.map((c, i) => `
+    <tr>
+      <td style="color:var(--text3);font-family:var(--font-mono);font-size:11px;">${i + 1}</td>
+      <td><strong>${c.name}</strong></td>
+      <td style="font-family:var(--font-mono);font-size:12px;">${c.phone}</td>
+      <td><span class="status-badge status-${c.status}"><span class="status-dot"></span>${c.status}</span></td>
+      <td style="color:var(--text2);font-size:12px;">${c.duration || '—'}</td>
+      <td style="color:var(--text2);font-size:12px;">${c.outcome || '—'}</td>
+      <td>${c.status !== 'pending' ? `<button class="btn btn-sm btn-secondary" onclick="showCallDetail(${i})">👁 View</button>` : '—'}</td>
+    </tr>
+  `).join('');
+}
+
+// ============================================================
+// CAMPAIGN
+// ============================================================
+function launchCampaign() {
+  if (!contacts.length) { alert('Please add contacts first.'); goStep(2); return; }
+
+  const sid = document.getElementById('twilioSid').value;
+  const token = document.getElementById('twilioToken').value;
+  const phone = document.getElementById('twilioPhone').value;
+  const groq = document.getElementById('groqKey').value;
+  const webhook = document.getElementById('webhookUrl').value;
+
+  if (!sid || !token || !phone) { alert('Please configure your Twilio credentials in Step 1.'); goStep(1); return; }
+  if (!groq) { alert('Please add your Groq API key in Step 1.'); goStep(1); return; }
+  if (!webhook) { alert('Please add your webhook server URL in Step 1.'); goStep(1); return; }
+
+  // Auto-test server connection before launching
+  addLog('🔄 Testing server connection before launch...', 'info');
+  try {
+    const healthRes = await fetch(webhook.replace(/\/$/, '') + '/health', {
+      headers: { 'ngrok-skip-browser-warning': 'true' },
+      signal: AbortSignal.timeout(8000)
+    });
+    if (!healthRes.ok) throw new Error('Server returned ' + healthRes.status);
+    addLog('✅ Server connection confirmed!', 'success');
+  } catch(e) {
+    addLog('❌ Cannot reach server: ' + e.message, 'error');
+    alert('❌ Cannot reach your server!\n\nMake sure:\n1. server.py is running (python server.py)\n2. ngrok is running (ngrok http 5000)\n3. You pasted the NEW ngrok URL in Step 1\n\nError: ' + e.message);
+    campaignRunning = false;
+    document.getElementById('launchBtn').style.display = '';
+    document.getElementById('stopBtn').style.display = 'none';
+    return;
+  }
+
+  campaignRunning = true;
+  callIndex = 0;
+  callLogs = [];
+  document.getElementById('launchBtn').style.display = 'none';
+  document.getElementById('stopBtn').style.display = '';
+  document.getElementById('progressWrap').style.display = '';
+  document.getElementById('liveIndicator').style.display = 'flex';
+  document.getElementById('logEntries').innerHTML = '';
+
+  addLog('🚀 Campaign launched! Starting calls...', 'system');
+  processNextCall();
+}
+
+function stopCampaign() {
+  campaignRunning = false;
+  clearTimeout(campaignInterval);
+  document.getElementById('launchBtn').style.display = '';
+  document.getElementById('stopBtn').style.display = 'none';
+  document.getElementById('liveIndicator').style.display = 'none';
+  addLog('⏹ Campaign stopped by user.', 'system');
+}
+
+async function processNextCall() {
+  if (!campaignRunning) return;
+  if (callIndex >= contacts.length) {
+    campaignRunning = false;
+    document.getElementById('launchBtn').style.display = '';
+    document.getElementById('stopBtn').style.display = 'none';
+    document.getElementById('liveIndicator').style.display = 'none';
+    addLog('✅ Campaign complete! All contacts have been called.', 'system');
+    return;
+  }
+
+  const contact = contacts[callIndex];
+  contact.status = 'calling';
+  renderDashboardTable();
+  updateStats();
+  updateProgress();
+
+  addLog(`📞 Calling <strong>${contact.name}</strong> at ${contact.phone}...`, 'call');
+
+  try {
+    await makeCall(contact, callIndex);
+  } catch (err) {
+    contact.status = 'failed';
+    contact.outcome = 'Error: ' + err.message;
+    addLog(`❌ Failed to call <strong>${contact.name}</strong>: ${err.message}`, 'error');
+  }
+
+  callIndex++;
+  renderDashboardTable();
+  updateStats();
+  updateProgress();
+
+  // Delay between calls (3 seconds)
+  campaignInterval = setTimeout(processNextCall, 3000);
+}
+
+async function makeCall(contact, idx) {
+  const twilioSid   = document.getElementById('twilioSid').value;
+  const twilioToken = document.getElementById('twilioToken').value;
+  const fromPhone   = document.getElementById('twilioPhone').value;
+  const webhookBase = document.getElementById('webhookUrl').value.replace(/\/$/, '');
+  const agentName   = document.getElementById('agentName').value || 'Alex';
+  const companyName = document.getElementById('companyName').value || 'our company';
+  const productDesc = document.getElementById('productDesc').value || 'our service';
+  const callGoal    = document.getElementById('callGoal').value;
+  const maxDuration = document.getElementById('maxDuration').value || 180;
+  const voice       = document.getElementById('agentVoice').value;
+  const groqKey     = document.getElementById('groqKey').value;
+
+  // Validate all inputs first — give clear errors instead of cryptic failures
+  if (!twilioSid || !twilioToken) throw new Error('Missing Twilio SID or Token — go back to Step 1');
+  if (!fromPhone)   throw new Error('Missing Twilio phone number — go back to Step 1');
+  if (!groqKey)     throw new Error('Missing Groq API key — go back to Step 1');
+  if (!webhookBase) throw new Error('Missing Webhook URL — paste your ngrok URL in Step 1');
+
+  // Build webhook URL using encodeURIComponent on EVERY value
+  // This fixes the btoa error caused by special characters in API keys / names
+  const webhookUrl = webhookBase + '/voice?' + [
+    'contact_name=' + encodeURIComponent(contact.name),
+    'company='      + encodeURIComponent(companyName),
+    'agent_name='   + encodeURIComponent(agentName),
+    'product='      + encodeURIComponent(productDesc),
+    'goal='         + encodeURIComponent(callGoal),
+    'voice='        + encodeURIComponent(voice),
+    'groq_key='     + encodeURIComponent(groqKey),
+    'max_duration=' + encodeURIComponent(maxDuration)
+  ].join('&');
+
+  // ✅ FIX: Call OUR server's /make-call instead of Twilio directly
+  // This avoids the CORS block that browsers enforce on cross-origin requests
+  const response = await fetch(`${webhookBase}/make-call`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true'   // bypass ngrok warning page
+    },
+    body: JSON.stringify({
+      twilioSid,
+      twilioToken,
+      fromPhone,
+      toPhone:    contact.phone,
+      webhookUrl
+    })
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: 'Server error' }));
+    throw new Error(err.error || 'Server error — check server.py terminal');
+  }
+
+  const data = await response.json();
+  if (!data.success) throw new Error(data.error || 'Call failed');
+
+  contact.callSid  = data.sid;
+  contact.status   = 'answered';
+  contact.duration = 'pending';
+  contact.outcome  = 'Call initiated successfully';
+  contact.conversation = [
+    { role: 'agent', text: `Hello ${contact.name}, this is ${agentName} from ${companyName}. I'm calling to tell you about ${productDesc}. Do you have a moment?` }
+  ];
+
+  addLog(`✅ Call placed to <strong>${contact.name}</strong> — SID: ${data.sid.slice(0, 14)}...`, 'success');
+}
+
+function updateProgress() {
+  const done = contacts.filter(c => c.status !== 'pending').length;
+  const pct = contacts.length ? Math.round((done / contacts.length) * 100) : 0;
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = pct + '%';
+}
+
+function addLog(msg, type = 'info') {
+  const now = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const el = document.getElementById('logEntries');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = `<div class="log-time">${now}</div><div class="log-msg">${msg}</div>`;
+  el.prepend(entry);
+}
+
+// ============================================================
+// CALL DETAIL MODAL
+// ============================================================
+function showCallDetail(idx) {
+  const c = contacts[idx];
+  document.getElementById('callModalTitle').textContent = `📞 ${c.name} — ${c.phone}`;
+  const conv = c.conversation || [];
+  document.getElementById('callModalContent').innerHTML = `
+    <div style="margin-bottom:14px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="status-badge status-${c.status}"><span class="status-dot"></span>${c.status}</span>
+      ${c.callSid ? `<span class="tag tag-info" style="font-size:11px;">SID: ${c.callSid}</span>` : ''}
+      ${c.duration ? `<span class="tag tag-free" style="font-size:11px;">Duration: ${c.duration}</span>` : ''}
+    </div>
+    <label>Conversation</label>
+    <div class="conversation">
+      ${conv.length ? conv.map(m => `
+        <div class="conv-msg">
+          <div class="conv-role ${m.role}">${m.role === 'agent' ? '🤖 Agent' : '👤 Contact'}</div>
+          <div class="conv-text">${m.text}</div>
+        </div>
+      `).join('') : '<div style="color:var(--text3);font-size:13px;">No conversation recorded yet.</div>'}
+    </div>
+    ${c.outcome ? `<div style="margin-top:14px;"><label>Outcome</label><div class="script-preview" style="max-height:60px;">${c.outcome}</div></div>` : ''}
+  `;
+  document.getElementById('callModal').classList.add('open');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ============================================================
+// BACKEND CODE
+// ============================================================
+function showBackendCode() {
+  const code = `# VoiceReach Backend Server
+# Install: pip install flask twilio groq requests
+# Run locally: python server.py
+# Then expose with: ngrok http 5000
+
+from flask import Flask, request, Response
+from twilio.twiml.voice_response import VoiceResponse, Gather
+from groq import Groq
+import json, os
+
+app = Flask(__name__)
+
+# In-memory conversation store (use Redis/DB for production)
+conversations = {}
+
+def get_groq_response(messages, groq_key, system_prompt):
+    client = Groq(api_key=groq_key)
+    response = client.chat.completions.create(
+        model="llama3-8b-8192",  # Free & fast
+        messages=[{"role": "system", "content": system_prompt}] + messages,
+        max_tokens=200,
+        temperature=0.7
+    )
+    return response.choices[0].message.content
+
+@app.route('/voice', methods=['GET', 'POST'])
+def voice():
+    """Initial call handler — greets the contact"""
+    contact_name = request.values.get('contact_name', 'there')
+    company = request.values.get('company', 'our company')
+    agent_name = request.values.get('agent_name', 'Alex')
+    product = request.values.get('product', 'our service')
+    goal = request.values.get('goal', 'schedule_demo')
+    voice = request.values.get('voice', 'Polly.Joanna')
+    groq_key = request.values.get('groq_key', '')
+    call_sid = request.values.get('CallSid', 'unknown')
+
+    # Store context
+    conversations[call_sid] = {
+        'history': [],
+        'contact': contact_name,
+        'company': company,
+        'agent': agent_name,
+        'product': product,
+        'goal': goal,
+        'groq_key': groq_key,
+        'voice': voice
+    }
+
+    goal_map = {
+        'schedule_demo': 'schedule a quick 15-minute demo',
+        'callback': 'arrange a convenient callback time',
+        'interest_check': 'check if they are interested',
+        'direct_close': 'close the sale directly'
+    }
+
+    greeting = (
+        f"Hello, am I speaking with {contact_name}? "
+        f"Hi {contact_name}, I'm {agent_name} calling from {company}. "
+        f"I hope I'm not catching you at a bad time. "
+        f"I'm reaching out because we help businesses with {product}. "
+        f"Do you have a couple of minutes to hear more?"
+    )
+
+    response = VoiceResponse()
+    gather = Gather(
+        input='speech',
+        action=f'/respond?call_sid={call_sid}',
+        method='POST',
+        speech_timeout='auto',
+        language='en-IN'
+    )
+    gather.say(greeting, voice=voice)
+    response.append(gather)
+    response.say("I didn't catch that. I'll try again later. Have a great day!", voice=voice)
+    return Response(str(response), mimetype='text/xml')
+
+@app.route('/respond', methods=['POST'])
+def respond():
+    """Handle ongoing conversation with Groq AI"""
+    call_sid = request.values.get('call_sid', 
+                request.values.get('CallSid', 'unknown'))
+    speech_result = request.values.get('SpeechResult', '')
+
+    ctx = conversations.get(call_sid, {})
+    if not ctx:
+        response = VoiceResponse()
+        response.say("Thank you for your time. Goodbye!")
+        response.hangup()
+        return Response(str(response), mimetype='text/xml')
+
+    # Add user message to history
+    ctx['history'].append({"role": "user", "content": speech_result})
+
+    system_prompt = f\"\"\"You are {ctx['agent']}, a professional sales agent from {ctx['company']}.
+You are calling {ctx['contact']} to pitch: {ctx['product']}.
+Your goal is to {ctx.get('goal', 'schedule a demo')}.
+
+Rules:
+- Keep responses SHORT (2-3 sentences max, this is a phone call)
+- Be friendly, professional, and persuasive
+- Handle objections confidently
+- If they want to schedule, confirm a time and say goodbye
+- If they're not interested, thank them politely and end the call
+- NEVER be pushy or rude
+- Speak naturally as if in a real phone conversation\"\"\".strip()
+
+    # Get AI response
+    try:
+        ai_reply = get_groq_response(ctx['history'], ctx['groq_key'], system_prompt)
+    except Exception as e:
+        ai_reply = "I apologize, I'm having a technical issue. I'll have someone call you back. Thank you for your time!"
+
+    ctx['history'].append({"role": "assistant", "content": ai_reply})
+
+    # Check if conversation should end
+    end_keywords = ['goodbye', 'bye', 'not interested', 'scheduled', 'thank you goodbye']
+    should_end = any(kw in ai_reply.lower() for kw in end_keywords)
+    should_end = should_end or len(ctx['history']) > 12  # Max 6 turns
+
+    response = VoiceResponse()
+    if should_end:
+        response.say(ai_reply, voice=ctx['voice'])
+        response.hangup()
+    else:
+        gather = Gather(
+            input='speech',
+            action=f'/respond?call_sid={call_sid}',
+            method='POST',
+            speech_timeout='auto',
+            language='en-IN'
+        )
+        gather.say(ai_reply, voice=ctx['voice'])
+        response.append(gather)
+
+    return Response(str(response), mimetype='text/xml')
+
+@app.route('/status', methods=['POST'])
+def status():
+    """Handle call status updates"""
+    call_status = request.values.get('CallStatus')
+    call_sid = request.values.get('CallSid')
+    duration = request.values.get('CallDuration', '0')
+    print(f"Call {call_sid}: {call_status} (duration: {duration}s)")
+    return '', 200
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)`;
+
+  document.getElementById('backendCodeContent').textContent = code;
+  document.getElementById('backendModal').classList.add('open');
+}
+
+function copyBackendCode() {
+  const code = document.getElementById('backendCodeContent').textContent;
+  navigator.clipboard.writeText(code).then(() => alert('Backend code copied to clipboard!'));
+}
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('click', (e) => {
+  if (e.target.classList.contains('modal-overlay')) {
+    e.target.classList.remove('open');
+  }
+});
+
+loadConfig();
+renderContacts();
+</script>
+</body>
+</html>
